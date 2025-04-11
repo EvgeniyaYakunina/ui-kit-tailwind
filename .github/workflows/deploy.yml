@@ -39,3 +39,7 @@ jobs:
 
       # Deploy (только заменяем email на ваш логин)
       - run: cd dist && rsync -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no" --archive --compress --delete . yakoonina@gmail.com:/var/www/ui-kit-tailwind/html/
+      
+      - name: Test SSH connectivity
+        run: |
+           ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no -o BatchMode=yes yakoonina@gmail.com 'echo "SSH OK"'
