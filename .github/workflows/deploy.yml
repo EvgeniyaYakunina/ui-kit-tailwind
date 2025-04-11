@@ -2,54 +2,28 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    strategy:
+      matrix:
+        node-version: [ 12.x ]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Clean previous builds
-        run: |
-          rm -rf node_modules
-          rm -rf dist
-          rm -rf .svelte-kit
-          rm -rf .cache
-
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
-          version: 8
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build project
-        run: pnpm run build
-
-      - name: Verify build output
-        run: |
-          echo "Build contents:"
-          ls -la dist
-          [ -f dist/index.html ] || (echo "index.html not found!" && exit 1)
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: 'dist'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          node-version: ${{ matrix.node-version }}
+      # Setup key
+      - run: set -eu
+      - run: mkdir "$HOME/.ssh"
+      - run: echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+      - run: chmod 600 "$HOME/.ssh/key"
+      # Build
+      - run: pnpm ci
+      - run: pnpm run build
+      # Deploy
+      - run: cd dist && rsync -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no" --archive --compress --delete . yakoonina@gmail.com:/var/www/ui-kit-tailwind/html/
