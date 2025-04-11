@@ -32,14 +32,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Остальные ваши шаги...
-      - run: mkdir -p "$HOME/.ssh"
-      - run: echo "${{ secrets.key }}" > "$HOME/.ssh/key"
-      - run: chmod 600 "$HOME/.ssh/key"
-      - run: pnpm run build
+      - name: Setup SSH key
+        run: |
+          mkdir -p "$HOME/.ssh"
+          echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+          chmod 600 "$HOME/.ssh/key"
 
-      # Deploy (только заменяем email на ваш логин)
-      - run: cd dist && rsync -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no" --archive --compress --delete . yakoonina@gmail.com:/var/www/ui-kit-tailwind/html/
-      
+      - name: Build project
+        run: pnpm run build
+
       - name: Test SSH connectivity
         run: |
-           ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no -o BatchMode=yes yakoonina@gmail.com 'echo "SSH OK"'
+          ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no -o BatchMode=yes yakoonina@gmail.com 'echo "SSH OK"'
+
+      - name: Deploy with rsync
+        run: |
+          cd dist && rsync -e "ssh -i $HOME/.ssh/key -o StrictHostKeyChecking=no -o BatchMode=yes" --archive --compress --delete . yakoonina@gmail.com:/var/www/ui-kit-tailwind/html/
