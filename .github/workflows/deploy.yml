@@ -12,7 +12,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup PNPM
@@ -20,7 +20,7 @@ jobs:
         with:
           version: 8
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -32,10 +32,15 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Upload artifact
+      - name: Verify build output
+        run: |
+          ls -la dist
+          [ -f dist/index.html ] || exit 1
+
+      - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'dist'
+          path: 'dist/'
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v3
