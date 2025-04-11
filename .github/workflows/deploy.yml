@@ -13,6 +13,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify lockfile
+        run: |
+          [ -f pnpm-lock.yaml ] || (echo "pnpm-lock.yaml not found!" && exit 1)
+
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
@@ -27,11 +31,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup SSH key (если требуется для других шагов)
+        run: |
+          mkdir -p "$HOME/.ssh"
+          echo "${{ secrets.key }}" > "$HOME/.ssh/key"
+          chmod 600 "$HOME/.ssh/key"
+
       - name: Build project
         run: pnpm run build
+
+      - name: List build directory
+        run: ls -la ./dist
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.GH_PAT }}
           publish_dir: ./dist
