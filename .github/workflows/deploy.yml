@@ -7,13 +7,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Clean previous builds
+        run: |
+          rm -rf node_modules
+          rm -rf dist
+          rm -rf .svelte-kit
+          rm -rf .cache
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
@@ -34,13 +41,15 @@ jobs:
 
       - name: Verify build output
         run: |
+          echo "Build contents:"
           ls -la dist
-          [ -f dist/index.html ] || exit 1
+          [ -f dist/index.html ] || (echo "index.html not found!" && exit 1)
 
-      - name: Upload to GitHub Pages
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'dist/'
+          path: 'dist'
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3
+        id: deployment
+        uses: actions/deploy-pages@v4
