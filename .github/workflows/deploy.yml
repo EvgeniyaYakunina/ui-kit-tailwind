@@ -2,36 +2,39 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.14.0]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Важно для получения всего history
+
+      - name: Verify lockfile
+        run: |
+          [ -f pnpm-lock.yaml ] || (echo "pnpm-lock.yaml not found!" && exit 1)
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
-          version: 7
+          version: 8
 
-      - uses: actions/setup-node@v1
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 16
+          cache: 'pnpm'
 
-      # Setup key (оставляем как было)
-      - run: set -eu
-      - run: mkdir "$HOME/.ssh"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Остальные ваши шаги...
+      - run: mkdir -p "$HOME/.ssh"
       - run: echo "${{ secrets.key }}" > "$HOME/.ssh/key"
       - run: chmod 600 "$HOME/.ssh/key"
-
-      # Build (оставляем как было)
-      - run: pnpm install --frozen-lockfile
       - run: pnpm run build
 
       # Deploy (только заменяем email на ваш логин)
