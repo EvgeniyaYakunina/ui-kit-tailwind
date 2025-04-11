@@ -31,7 +31,7 @@ jobs:
       - run: chmod 600 "$HOME/.ssh/key"
 
       # Build (оставляем как было)
-      - run: pnpm ci
+      - run: pnpm install --frozen-lockfile
       - run: pnpm run build
 
       # Deploy (только заменяем email на ваш логин)
